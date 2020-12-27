@@ -2,6 +2,7 @@ package DeadByMC.deadbymc_tibaimc;
 
 import java.util.HashMap;
 
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -23,8 +24,8 @@ public class main extends JavaPlugin {
     public void onEnable()
     {
     	
-//	this.getCommand("bigpeepee").setExecutor(new bigpepeCommandExecutor(this));
-//	this.getCommand("wccs-menu").setExecutor(new MainMenuCommandExectuor(this));
+
+    	this.getCommand("killer").setExecutor(new KillerCommandExecutor(this));
 	 getServer().getPluginManager().registerEvents(new MatchListener(this), this);
 	 ItemStack itemStack = new ItemStack(Material.LANTERN);
 	 ItemMeta itemMeta = itemStack.getItemMeta();

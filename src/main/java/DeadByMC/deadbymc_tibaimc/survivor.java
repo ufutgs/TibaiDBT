@@ -35,7 +35,7 @@ public class survivor
 		{
 			QTE=false;
 			QTE_percentage=0.1;
-			survivor.sendTitle(null, ChatColor.YELLOW+"Success!! + 8% repairing progression", 1, 10, 5);
+			survivor.sendTitle(null, ChatColor.YELLOW+"Success!! + 8% repairing progression", 3, 10, 3);
 			return 0.8;
 		}
 		else {
@@ -45,8 +45,9 @@ public class survivor
 			if (QTE ==true)
 			{
 				button.setPowered(false);
-				survivor.sendTitle(ChatColor.RED+"QTE TIME !", ChatColor.WHITE+"Press the button in one second!!", 1, 10, 1);
-				Bukkit.getScheduler().runTaskLater(plugin, repairing_falied(), 20);
+				survivor.sendTitle(ChatColor.RED+"QTE TIME !", ChatColor.WHITE+"Press the button in one second!!", 1, 5, 1);
+				Bukkit.getScheduler().runTaskLater(plugin, ()->{try{repairing_falied();}catch (Exception e) {return;
+				}}, 20);
 			}
 			return (repair_rate);
 		}

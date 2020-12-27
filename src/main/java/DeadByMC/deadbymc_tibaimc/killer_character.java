@@ -62,15 +62,17 @@ public class killer_character {
 		return this.killer_character_enum;
 	}
 	// execute the character skill method.
-	public void do_character_skill(String action,Player user) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, SecurityException
+	public void do_character_skill(String action,Player user,Player anotherPlayer , ArrayList<Player> survivor_list) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, SecurityException
 	{
 		try {
-			this.getClass().getMethod(killer_character_enum.getvalue()+"_"+action).invoke(this,user);
+			this.getClass().getMethod(killer_character_enum.getvalue()+"_"+action).invoke(this,user,anotherPlayer,survivor_list);
 		} catch (NoSuchMethodException e) {
 			return;
 		} 
 	}
-	public void Huntress_init(Player killer_player)
+	
+	// Huntress
+	public void Huntress_init(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		Inventory inventory = killer_player.getInventory();
 		ItemStack bowItemStack = new ItemStack(Material.BOW, 1);
@@ -79,7 +81,7 @@ public class killer_character {
 		inventory.setItem(1, bowItemStack);
 		inventory.setItem(2, arrowItemStack);
 	}
-	public void Huntress_onhit(Player killer_player)
+	public void Huntress_onhit(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		if(killer_player.getInventory().contains(Material.ARROW, 3)) {}
 		else {
@@ -87,8 +89,9 @@ public class killer_character {
 			killer_player.addPotionEffect(PotionEffectType.SLOW.createEffect(3, 200));
 		return;
 	}
-
-	public void RTA_onhit(Player killer_player)
+	
+//   RTA
+	public void RTA_onhit(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		if(killer_player.hasPotionEffect(PotionEffectType.INCREASE_DAMAGE))
 		{
@@ -104,7 +107,9 @@ public class killer_character {
 			}
 		}
 	}
-	public Runnable Shadow_init(Player killer_player)
+	
+	//shadow 
+	public Runnable Shadow_init(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{if(check){	
 		check = false;
 		killer_player.addPotionEffect(PotionEffectType.INVISIBILITY.createEffect(1000000, 1));
@@ -118,50 +123,56 @@ public class killer_character {
 	}
 	return null;
 	}
-	public void Shadow_onhit(Player killer_player)
+	public void Shadow_onhit(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		killer_player.removePotionEffect(PotionEffectType.INVISIBILITY);
 		killer_player.addPotionEffect(PotionEffectType.SLOW.createEffect(3, 200));
-		Bukkit.getScheduler().runTaskLater(this.plugin, ()->{killer_player.addPotionEffect(PotionEffectType.SLOW.createEffect(6, 2));}, 60);
-		Bukkit.getScheduler().runTaskLater(this.plugin, Shadow_init(killer_player),200);
+		Bukkit.getScheduler().runTaskLater(this.plugin, ()->{try{killer_player.addPotionEffect(PotionEffectType.SLOW.createEffect(6, 2));}catch (Exception e) {return;}}, 60);
+		Bukkit.getScheduler().runTaskLater(this.plugin, ()->{try{Shadow_init(killer_player,null,null);}catch (Exception e) {return;}},200);
 	}
-	public void Shadow_eat(Player killer_player, ArrayList<Player> survivor)
+	public void Shadow_eat(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
-		for(Player i : survivor)
+		for(Player i : survivor_list)
 		{
 			i.addPotionEffect(PotionEffectType.GLOWING.createEffect(10, 1));
 		}
-		Bukkit.getScheduler().runTaskLater(this.plugin, ()->{killer_player.getInventory().setItem(2,killer_item_ItemStack);}, 400);
+		Bukkit.getScheduler().runTaskLater(this.plugin, ()->{try{killer_player.getInventory().setItem(2,killer_item_ItemStack);}catch (Exception e) {return;}}, 400);
 	}
-	public void Doctor_init(Player killer_player)
+	
+	
+	//doctor
+	public void Doctor_init(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		ItemStack potionItemStack = new ItemStack(killer_item_ItemStack);
 		potionItemStack.setAmount(2);
 		killer_player.getInventory().addItem(potionItemStack);
 	}
 	
-	public void Doctor_onhit(Player killer_player , Player survivor)
+	public void Doctor_onhit(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		killer_player.addPotionEffect(PotionEffectType.SLOW.createEffect(3, 200));
 		survivor.addPotionEffect(PotionEffectType.POISON.createEffect(3, 1));
 	}
-	public void Doctor_potion(Player killer_player)
+	public void Doctor_throw(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
-		Bukkit.getScheduler().runTaskLater(plugin,()->{killer_player.getInventory().addItem(killer_item_ItemStack);}, 400);
+		Bukkit.getScheduler().runTaskLater(plugin,()->{try{killer_player.getInventory().addItem(killer_item_ItemStack);}catch (Exception e) {return;}}, 400);
 	}
-	public void VoidWalker_init(Player killer_player)
+	
+	
+	//voidwalker
+	public void VoidWalker_init(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		Inventory inventory = killer_player.getInventory();
 		ItemStack ender_pearlItemStack = new ItemStack(killer_item_ItemStack);
 		ender_pearlItemStack.setAmount(2);
 		inventory.setItem(2, ender_pearlItemStack);
 	}
-	public void VoidWalker_onhit(Player killer_player){killer_player.addPotionEffect(PotionEffectType.SLOW.createEffect(3, 200));}
+	public void VoidWalker_onhit(Player killer_player,Player survivor, ArrayList<Player> survivor_list){killer_player.addPotionEffect(PotionEffectType.SLOW.createEffect(3, 200));}
 	
-	public void VoidWalker_throw(Player killer_player, ArrayList<Player> survivor)
+	public void VoidWalker_teleport(Player killer_player,Player survivor, ArrayList<Player> survivor_list)
 	{
 		Location playerLocation = killer_player.getLocation();
-		for(Player i : survivor)
+		for(Player i : survivor_list)
 		{
 			Location survivor_location = i.getLocation();
 			double distance = Math.pow(Math.pow(Math.abs(playerLocation.getX())-Math.abs(survivor_location.getX()), 2)+Math.pow(Math.abs(playerLocation.getY())-Math.abs(survivor_location.getY()), 2),0.5);
@@ -170,7 +181,7 @@ public class killer_character {
 				i.addPotionEffect(PotionEffectType.SLOW.createEffect(3, 1));
 				i.addPotionEffect(PotionEffectType.GLOWING.createEffect(3, 1));
 			}
-			Bukkit.getScheduler().runTaskLater(plugin, ()->{killer_player.getInventory().addItem(killer_item_ItemStack);}, 300);
+			Bukkit.getScheduler().runTaskLater(plugin, ()->{try{killer_player.getInventory().addItem(killer_item_ItemStack);}catch (Exception e) {return;}}, 300);
 		}
 	}
 }

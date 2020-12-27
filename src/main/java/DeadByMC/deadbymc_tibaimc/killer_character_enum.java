@@ -1,7 +1,5 @@
 package DeadByMC.deadbymc_tibaimc;
 
-import java.util.HashMap;
-
 
 
 public enum killer_character_enum {

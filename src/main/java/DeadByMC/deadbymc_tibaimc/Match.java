@@ -11,6 +11,8 @@ import org.bukkit.Location;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
 public class Match 
@@ -27,6 +29,7 @@ public class Match
   private int finished_generator = 0;
   private ArrayList<Integer> pre_killer_number=new ArrayList<Integer>();;
   private BukkitTask task = null;
+  private String win_or_lose ="";
   public Match(main plugin)
   {
 	  this.plugin = plugin;
@@ -48,38 +51,47 @@ public class Match
 	{
 		for(Player iPlayer : player_list)
 		{
-			iPlayer.sendMessage(ChatColor.YELLOW+"Game will start in 10 seconds.");
+			iPlayer.sendMessage(ChatColor.YELLOW+"The game room is full. Game will start in 10 seconds.");
 		}
 		task=Bukkit.getScheduler().runTaskLater(plugin,preparation_state(), 200);
+	}
+	else {
+		for(Player iPlayer : player_list)
+		{
+			iPlayer.sendMessage(ChatColor.YELLOW+"Someone has enter the game room . ("+player_list.size()+"/5)");
+		}
+
 	}
 }
   // get match number tagged on the player
   public double get_match_num()
   {
-	  return match_num;
-  }
+	  return match_num;}
   
   public ArrayList<Player> get_player_list() {
-	return player_list;
-}
+	return player_list;}
 
+public String get_win_or_lose()
+{return win_or_lose;}
+
+public killer get_killer()
+{return killer;}
+
+public Player get_killer_player()
+{return killer_player;}
+
+public void killer_skill_execution(String action, Player anotherPlayer) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, SecurityException
+{
+	killer.killer_skill_execution(action, anotherPlayer, survivor_list);
+	}
+
+
+ public void choose_killer(Player player, String killer_charac)
+ {
+	 if(player == killer_player)
+	 { killer.choose_character(killer_charac);}
+ }
  
-  
-  // clear player's state
-//  public void clear(Player player)
-//  {
-//	  if(player!=killer_player)
-//	  {   survivor_list.remove(player);
-//	  	  survivorMap.remove(player);
-//		  player.sendMessage(ChatColor.BLUE+"Clear Successfully !"); return;
-//	  }
-//	  else if (player == killer_player) {
-//		killer_player = null;
-//		killer = null;
-//		player.sendMessage(ChatColor.BLUE+"Clear Successfully !"); return;
-//	}
-//  }
-//  
   // clear all stuff related to disconnected player from this match
   public void exit_match(Player player)
   {
@@ -91,22 +103,55 @@ public class Match
 		  {iPlayer.sendMessage(ChatColor.YELLOW+"there is a player exit the match!! Please wait for next player in order to start the game!");}
 	  }
 	  else {player_list.remove(player); }
+	  if(this.position.get(player_list.indexOf(player))=="Killer")
+	  {pre_killer_number.remove(player_list.indexOf(player));}
+	  else {this.position.remove(player_list.indexOf(player));}
+	  player.removeMetadata("match_num",plugin); // remove match index tagged on player 
 	  if(player != killer_player)
 	  { if (survivor_list.contains(player)) {
 			survivor_list.remove(player);survivorMap.remove(player);
-		}
+			if(survivor_list.size()==0)
+			{win_or_lose="killer_win";}}
 	  }
-	  else {killer_player=null;killer=null;}
-	  if(this.position.get(player_list.indexOf(player))=="Killer")
-	  {pre_killer_number.remove(player_list.indexOf(player));}
-	  this.position.remove(player_list.indexOf(player));
-	  player.removeMetadata("match_num",plugin);
+	  else {
+		 killer_player=null;
+		 killer=null;
+		 win_or_lose="survivor_win";}
+	  if (win_or_lose!="ended")
+	  {end_match();}
+	  for(PotionEffect potionEffect : player.getActivePotionEffects())
+	  {player.removePotionEffect(potionEffect.getType());}
 	  return;
   }
   
+ // executed when match is ended 
+ public void end_match()
+ {
+	 if(win_or_lose=="survivor_win")
+	 {for(Player iPlayer : player_list)
+		 {
+		 	iPlayer.sendTitle(ChatColor.YELLOW+"Survivor Win !!!!", "teleport will be proceed after 10 seconds", 10, 10, 10);
+		 	exit_match(iPlayer);
+		 }
+	 Bukkit.getScheduler().runTaskLaterAsynchronously(plugin,()->{for(Player iPlayer : player_list){iPlayer.teleport(Bukkit.getWorld("lobby").getSpawnLocation()); }}, 200);
+	 win_or_lose="ended";
+	 }
+	 else if(win_or_lose=="killer_win")
+	 {for(Player iPlayer : player_list)
+	 {
+		 	iPlayer.sendTitle(ChatColor.YELLOW+"Killer Win !!!!", "teleport will be proceed after 10 seconds", 10, 10, 10);
+		 	exit_match(iPlayer);
+	 }
+	 Bukkit.getScheduler().runTaskLaterAsynchronously(plugin,()->{for(Player iPlayer : player_list){iPlayer.teleport(Bukkit.getWorld("lobby").getSpawnLocation());}}, 200);
+	 win_or_lose="ended";}
+ }
+ 
+ 
+ // executed when match is in preparation state , where survivor buying stuff, killer changing character
  public Runnable preparation_state() throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, SecurityException
  {
 	 task=null;
+	 win_or_lose="preparation";
 	 int killer_index=0;
 	if(pre_killer_number.size()>=1)
 	{
@@ -114,17 +159,28 @@ public class Match
 	else {
 		killer_index = pre_killer_number.get(0);}
 	killer_player = player_list.get(pre_killer_number.get(killer_index));
+	killer = new killer(killer_player, plugin);
 	for(Player iPlayer : player_list)
 	{
-		iPlayer.sendTitle(ChatColor.RED+" Killer is " + killer_player.getDisplayName(), ChatColor.DARK_RED+"GLHF", 10, 10, 10);
-		Bukkit.getScheduler().runTaskLater(plugin, ()->{iPlayer.sendTitle(ChatColor.YELLOW+" 1-min prepration Start! ", ChatColor.DARK_RED+"prepared yourself!", 10, 10, 10);}, 30);
+		iPlayer.sendTitle(ChatColor.RED+" Killer is " + killer_player.getDisplayName(), ChatColor.DARK_RED+"GLHF", 5, 10, 5);
 	}
-	Bukkit.getScheduler().runTaskLater(plugin, start_match(), 1230);
+	Bukkit.getScheduler().runTaskLater(plugin, ()->{if(win_or_lose=="survivor_win" || win_or_lose=="killer_win") {return;}for( Player iPlayer : player_list) {iPlayer.sendTitle(ChatColor.YELLOW+" 1-min prepration Start! ", ChatColor.DARK_RED+"prepared yourself!", 5, 10, 5);}}, 36);
+	Bukkit.getScheduler().runTaskLater(plugin, ()->{if(win_or_lose=="survivor_win" || win_or_lose=="killer_win") {return;}for( Player iPlayer : player_list) {iPlayer.sendTitle("game is about to start!", null, 10, 20, 10);}}, 1172);
+	Bukkit.getScheduler().runTaskLater(plugin, start_match(), 1272);
 	return null; 
  }
  
+ //executed when match is about to started
   public Runnable start_match() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, SecurityException {
+	  if (killer.get_character()==null)
+	  {killer.choose_character("Huntress");}
 		killer.Start_match();
+		win_or_lose="ongoing";
+		for (Player iPlayer : player_list)
+		{
+			iPlayer.addPotionEffect(PotionEffectType.SATURATION.createEffect(1000000, 1));
+		}
+		// teleport player to the map
 		return null;
 }
   
@@ -143,24 +199,24 @@ public class Match
 	 if( generator_and_progression.get(location)+repair_rate>=1)
 	 {
 		 generator_and_progression.replace(location, 1.0);
-		 player.sendTitle(null, ChatColor.YELLOW+"REPAIR SUCCESSFULLY!! ",1,10,5);
+		 player.sendTitle(null, ChatColor.YELLOW+"REPAIR SUCCESSFULLY!! ",5,20,5);
 		 finished_generator+=1;
-		 for(int i =1;i<5;i++)
+		 for(int i =1;i<3;i++)
 		 {
 			 Powerable redstonelamp = (Powerable)location.clone().add(0, i, 0).getBlock().getBlockData();
 			 redstonelamp.setPowered(true);}
 		 if(finished_generator==5)
 		 {
-			 for(Player player1 : player_list)
+			 for(Player player1 : survivor_list)
 			 {
-				 player1.sendTitle(ChatColor.RED+"GENERATOR HAS BEEN REPAIRED!!", ChatColor.WHITE+"survivor may proceed to the gate!!!", 1, 20, 10);
+				 player1.sendTitle(ChatColor.RED+"GENERATOR HAS BEEN REPAIRED!!", ChatColor.WHITE+"survivor may proceed to the gate!!!", 5, 20, 5);
 			 }
 			 //open the door using command block 
 		 }
 		 return; 
 	 }
 	 else { generator_and_progression.replace(location, generator_and_progression.get(location)+repair_rate);}
-	 player.sendTitle(null, ChatColor.WHITE+"repairing... progression: "+repair_rate *100+"%" , 1, 10, 5);
+	 player.sendTitle(null, ChatColor.WHITE+"repairing... progression: "+repair_rate *100+"%" , 2, 10, 2);
 	
 	  
   }
