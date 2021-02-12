@@ -2,5 +2,8 @@ main: DeadByMC.deadbymc_tibaimc.main
 name: deadbymc-tibaimc
 version: 1.0
 author: its me
-api-version: 1.15
+api-version: 1.16
+commands:
+  killeritem:
+
 

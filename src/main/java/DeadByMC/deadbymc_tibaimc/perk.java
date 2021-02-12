@@ -1,6 +1,7 @@
 package DeadByMC.deadbymc_tibaimc;
 
 public class perk {
+	@SuppressWarnings("unused")
 	private perk_enum perk_enum;
 	
 	public perk(String perkname) 
